@@ -30,9 +30,11 @@ example_parameters = {
         'adjust_timestamp': True,
         'dump_node_map': False,
         # set parameters defined in blackfly_s.yaml
-        'gain_auto': 'Continuous',
-        # 'pixel_format': 'BayerRG8',
-        'exposure_auto': 'Continuous',
+	#This was set to continous on default
+        #'gain_auto': 'Off',
+        'pixel_format': 'BayerRG8',
+	#Set to continous on default
+        #'exposure_auto': 'Off',
         # to use a user set, do this:
         # 'user_set_selector': 'UserSet0',
         # 'user_set_load': 'Yes',
@@ -65,9 +67,10 @@ example_parameters = {
     'blackfly': {
         'debug': False,
         'dump_node_map': False,
-        'gain_auto': 'Continuous',
-        'pixel_format': 'BayerRG8',
-        'exposure_auto': 'Continuous',
+	#This was continous default, same with exposure_auto
+        'gain_auto': 'Off',
+        'pixel_format': 'RGB',
+        'exposure_auto': 'Off',
         'frame_rate_auto': 'Off',
         'frame_rate': 40.0,
         'frame_rate_enable': True,
@@ -192,7 +195,7 @@ def generate_launch_description():
             ),
             LaunchArg(
                 'serial',
-                default_value="'20435008'",
+                default_value="'16335749'",
                 description='FLIR serial number of camera (in quotes!!)',
             ),
             LaunchArg(
