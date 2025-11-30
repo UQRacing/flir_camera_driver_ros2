@@ -104,6 +104,9 @@ parameters:
   - name: exposure_time
     type: float
     node: AcquisitionControl/ExposureTime
+  - name: frame_rate_continuous
+    type: bool
+    node: AcquisitionControl/AcquisitionFrameRateContinuous
   - name: frame_rate_enable
     type: bool
     node: AcquisitionControl/AcquisitionFrameRateEnable
