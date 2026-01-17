@@ -213,6 +213,14 @@ void Camera::readParameters()
   if (!quiet_) {
     LOG_INFO((adjustTimeStamp_ ? "" : "not ") << "adjusting time stamps!");
   }
+  useSensorTimeStamp_ = safe_declare<bool>(prefix_ + "use_sensor_timestamp", false);
+  if (!quiet_) {
+    LOG_INFO((useSensorTimeStamp_ ? "" : "not ") << "using sensor time stamps!");
+  }
+  if (useSensorTimeStamp_ && adjustTimeStamp_) {
+    LOG_WARN("use_sensor_timestamp overrides adjust_timestamp, disabling adjustment");
+    adjustTimeStamp_ = false;
+  }
 
   cameraInfoURL_ = safe_declare<std::string>(prefix_ + "camerainfo_url", "");
   frameId_ = safe_declare<std::string>(prefix_ + "frame_id", node_->get_name());
@@ -598,8 +606,19 @@ void Camera::doPublish(const ImageConstPtr & im)
       return;
     }
   } else {
-    t =
-      adjustTimeStamp_ ? getAdjustedTimeStamp(im->time_, im->imageTime_) : rclcpp::Time(im->time_);
+    if (useSensorTimeStamp_) {
+      if (im->imageTime_ > 0) {
+        t = rclcpp::Time(im->imageTime_, RCL_SYSTEM_TIME);
+      } else {
+        if (!warnedNoSensorTimestamp_) {
+          LOG_WARN("sensor timestamp unavailable, falling back to host time");
+          warnedNoSensorTimestamp_ = true;
+        }
+        t = rclcpp::Time(im->time_);
+      }
+    } else {
+      t = adjustTimeStamp_ ? getAdjustedTimeStamp(im->time_, im->imageTime_) : rclcpp::Time(im->time_);
+    }
   }
   imageMsg_.header.stamp = t;
   cameraInfoMsg_.header.stamp = t;
@@ -729,6 +748,20 @@ bool Camera::start()
     // Some parameters (like blackfly s chunk control) cannot be set once
     // the camera is running.
     createCameraParameters();
+    const std::string ptp_param = prefix_ + "ptp_enable";
+    if (parameterMap_.find(ptp_param) != parameterMap_.end()) {
+      bool ptp_enabled = false;
+      node_->get_parameter(ptp_param, ptp_enabled);
+      if (!ptp_enabled) {
+        node_->set_parameter(rclcpp::Parameter(ptp_param, true));
+        LOG_INFO("enabled IEEE1588 PTP via " << ptp_param);
+      }
+      if (!useSensorTimeStamp_) {
+        useSensorTimeStamp_ = true;
+        adjustTimeStamp_ = false;
+        LOG_INFO("using sensor timestamps for IEEE1588 sync");
+      }
+    }
     if (!connectWhileSubscribed_) {
       startCamera();
     } else {

@@ -142,6 +142,8 @@ private:
   bool computeBrightness_{false};
   double acquisitionTimeout_{3.0};
   bool adjustTimeStamp_{false};
+  bool useSensorTimeStamp_{false};
+  bool warnedNoSensorTimestamp_{false};
   bool connectWhileSubscribed_{false};  // if true, connects to SDK when subscription happens
   bool enableExternalControl_{false};
   uint32_t currentExposureTime_{0};

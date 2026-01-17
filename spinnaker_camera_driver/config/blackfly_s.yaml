@@ -70,6 +70,9 @@ parameters:
     type: int
     # default is 1400. Set to 9000 to enable jumbo frames, ensure NIC MTU set >= 9000
     node: TransportLayerControl/GigEVision/GevSCPSPacketSize
+  - name: ptp_enable
+    type: bool
+    node: TransportLayerControl/GigEVision/GevIEEE1588
   #
   # -------- digital IO control
   #
@@ -107,9 +110,13 @@ parameters:
   - name: frame_rate_continuous
     type: bool
     node: AcquisitionControl/AcquisitionFrameRateContinuous
+  - name: frame_rate_auto
+    type: enum
+    # enum values: Continuous and Off
+    node: AcquisitionControl/AcquisitionFrameRateAuto
   - name: frame_rate_enable
     type: bool
-    node: AcquisitionControl/AcquisitionFrameRateEnable
+    node: AcquisitionControl/AcquisitionFrameRateControlEnable
   - name: frame_rate
     type: float
     node: AcquisitionControl/AcquisitionFrameRate

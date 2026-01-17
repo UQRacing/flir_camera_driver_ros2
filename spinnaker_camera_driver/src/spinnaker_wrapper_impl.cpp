@@ -304,20 +304,24 @@ static int16_t compute_brightness(
 void SpinnakerWrapperImpl::OnImageEvent(Spinnaker::ImagePtr imgPtr)
 {
   // update frame rate
-  auto now = chrono::high_resolution_clock::now();
-  uint64_t t = chrono::duration_cast<chrono::nanoseconds>(now.time_since_epoch()).count();
+  const auto now_steady = chrono::steady_clock::now();
+  const auto now_system = chrono::system_clock::now();
+  const uint64_t t_steady =
+    chrono::duration_cast<chrono::nanoseconds>(now_steady.time_since_epoch()).count();
+  const uint64_t t_system =
+    chrono::duration_cast<chrono::nanoseconds>(now_system.time_since_epoch()).count();
   if (avgTimeInterval_ == 0) {
     if (lastTime_ != 0) {
-      avgTimeInterval_ = (t - lastTime_) * 1e-9;
+      avgTimeInterval_ = (t_steady - lastTime_) * 1e-9;
     }
   } else {
-    const double dt = (t - lastTime_) * 1e-9;
+    const double dt = (t_steady - lastTime_) * 1e-9;
     const double alpha = 0.01;
     avgTimeInterval_ = avgTimeInterval_ * (1.0 - alpha) + dt * alpha;
   }
   {
     std::unique_lock<std::mutex> lock(mutex_);
-    lastTime_ = t;
+    lastTime_ = t_steady;
   }
   numImagesTotal_++;
   if (imgPtr->IsIncomplete()) {
@@ -363,7 +367,7 @@ void SpinnakerWrapperImpl::OnImageEvent(Spinnaker::ImagePtr imgPtr)
             imgPtr->GetHeight(), imgPtr->GetStride(), brightnessSkipPixels_)
         : -1;
     ImagePtr img(new Image(
-      t, brightness, expTime, maxExpTime, gain, stamp, imgPtr->GetImageSize(),
+      t_system, brightness, expTime, maxExpTime, gain, stamp, imgPtr->GetImageSize(),
       imgPtr->GetImageStatus(), imgPtr->GetData(), imgPtr->GetWidth(), imgPtr->GetHeight(),
       imgPtr->GetStride(), imgPtr->GetBitsPerPixel(), imgPtr->GetNumChannels(),
       imgPtr->GetFrameID(), pixelFormat_, numIncompleteImages_));
@@ -499,7 +503,7 @@ void SpinnakerWrapperImpl::monitorStatus()
       std::unique_lock<std::mutex> lock(mutex_);
       lastTime = lastTime_;
     }
-    auto now = chrono::high_resolution_clock::now();
+    auto now = chrono::steady_clock::now();
     uint64_t t = chrono::duration_cast<chrono::nanoseconds>(now.time_since_epoch()).count();
     if (t - lastTime > acquisitionTimeout_ && camera_) {
       std::cout << "WARNING: acquisition timeout, restarting!" << std::endl;

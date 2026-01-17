@@ -224,6 +224,12 @@ Blackfly S the parameters look like this:
        'chunk_selector_timestamp': 'Timestamp',
        'chunk_enable_timestamp': True,
 
+If your camera supports IEEE1588 (PTP) and is synchronized to a master
+clock, you can publish the sensor-provided time stamps directly and
+avoid any host-time correction. Enable PTP in the camera parameters
+(e.g. ``ptp_enable``) and set ``use_sensor_timestamp`` to true while
+leaving ``adjust_timestamp`` off.
+
 
 
 Network Configuration for GigE cameras
@@ -460,4 +466,3 @@ License
 
 This software is issued under the Apache License Version 2.0. The file
 ``cmake/TargetArch.cmake`` is released under a custom license (see file).
-

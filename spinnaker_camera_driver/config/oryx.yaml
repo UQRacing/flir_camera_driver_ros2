@@ -133,6 +133,9 @@ parameters:
     type: int
     # default is 1400. Set to 9000 to enable jumbo frames, ensure NIC MTU set >= 9000
     node: TransportLayerControl/GigEVision/GevSCPSPacketSize
+  - name: ptp_enable
+    type: bool
+    node: TransportLayerControl/GigEVision/GevIEEE1588
   #
   # -------- digital IO control
   #

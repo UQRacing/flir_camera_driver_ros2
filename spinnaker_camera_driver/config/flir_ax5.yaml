@@ -33,6 +33,9 @@ parameters:
     type: int
     # default is 576. Other cameras had the option to set to 9000 to enable jumbo frames, ensure NIC MTU set >= 9000
     node: TransportLayerControl/GevSCPSPacketSize
+  - name: ptp_enable
+    type: bool
+    node: TransportLayerControl/GevIEEE1588
 
   # 
   # ---------- FLIR Camera Control

@@ -27,7 +27,8 @@ example_parameters = {
     'blackfly_s': {
         'debug': False,
         'compute_brightness': False,
-        'adjust_timestamp': True,
+        'adjust_timestamp': False,
+        'use_sensor_timestamp': True,
         'dump_node_map': False,
         # set parameters defined in blackfly_s.yaml
 	#This was set to continous on default
@@ -41,6 +42,7 @@ example_parameters = {
         # These are useful for GigE cameras
         # 'device_link_throughput_limit': 380000000,
         'gev_scps_packet_size': 9000,
+        'ptp_enable': True,
         # ---- to reduce the sensor width and shift the crop
         'image_width': 1920,
         'image_height': 608,
@@ -49,7 +51,7 @@ example_parameters = {
         # 'binning_x': 1,
         # 'binning_y': 1,
         # 'connect_while_subscribed': True,
-        'frame_rate_continous': True,
+        'frame_rate_continuous': False,
         'frame_rate_auto': 'Off',
         'frame_rate': 20.0,
         'frame_rate_enable': True,
@@ -68,6 +70,8 @@ example_parameters = {
     'blackfly': {
         'debug': False,
         'dump_node_map': False,
+        'adjust_timestamp': False,
+        'use_sensor_timestamp': True,
 	#This was continous default, same with exposure_auto
         'gain_auto': 'Off',
         'pixel_format': 'RGB',
@@ -77,6 +81,7 @@ example_parameters = {
         'frame_rate_enable': True,
         'buffer_queue_size': 10,
         'trigger_mode': 'Off',
+        'ptp_enable': True,
         # 'stream_buffer_handling_mode': 'NewestFirst',
         # 'multicast_monitor_mode': False
     },
@@ -92,7 +97,7 @@ example_parameters = {
         'image_width': 2048,
         'image_height': 1536,
         'pixel_format': 'RGB8',  # 'BayerRG8, 'RGB8' or 'Mono8'
-        'frame_rate_continous': True,
+        'frame_rate_continuous': True,
         'frame_rate': 100.0,
         'trigger_mode': 'Off',
         'chunk_mode_active': True,
@@ -129,10 +134,12 @@ example_parameters = {
         'debug': False,
         'compute_brightness': False,
         'adjust_timestamp': False,
+        'use_sensor_timestamp': True,
         'dump_node_map': False,
         # --- Set parameters defined in flir_ax5.yaml
         'pixel_format': 'Mono8',
         'gev_scps_packet_size': 576,
+        'ptp_enable': True,
         'image_width': 640,
         'image_height': 512,
         'offset_x': 0,
