@@ -1,14 +1,31 @@
 <?xml version="1.0"?>
     <robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="flir_blackfly_s">
-    <!-- 
+    <!--
         camera_{x,y,z,mass} are physical properties of camera collision model
         lens_{r, h, mass} are physical properties of the camera lens
         hfov, fps, width, height, format, near, and far are simulation
+
+        parent/mount_xyz/mount_rpy attach the camera to a host robot. Leave
+        parent empty (the default) to instantiate the camera standalone, in
+        which case ${frame} becomes a root link (see demo.urdf.xacro). Pass a
+        parent link name plus mount_xyz/mount_rpy to weld ${frame} onto a car
+        URDF (see docs/UQR_INTEGRATION.md).
     -->
     <xacro:macro name="flir_blackfly_s"
-        params="frame:=camera name:=camera camera_x:=0.047758 camera_y:=0.029 camera_z:=0.029 camera_mass:=0.03
-                lens_r:=0.016 lens_h:=0.04 lens_mass:= 0.05 
+        params="frame:=camera name:=camera parent:='' mount_xyz:='0 0 0' mount_rpy:='0 0 0'
+                camera_x:=0.047758 camera_y:=0.029 camera_z:=0.029 camera_mass:=0.03
+                lens_r:=0.016 lens_h:=0.04 lens_mass:=0.05
                 hfov:=1.0471975512 fps:=30 width:=720 height:=540 format:=R8G8B8 near:=0.5 far:=300">
+
+        <!-- Optional mount joint welding the camera onto a host link. Only
+             created when a non-empty parent link is supplied. -->
+        <xacro:unless value="${parent == ''}">
+            <joint name="${frame}_mount_joint" type="fixed">
+                <origin xyz="${mount_xyz}" rpy="${mount_rpy}" />
+                <parent link="${parent}" />
+                <child link="${frame}" />
+            </joint>
+        </xacro:unless>
 
         <link name="${frame}">
         <inertial>
@@ -31,10 +48,10 @@
         </link>
 
         <link name="${frame}_lens">
-        <intertial>
-            <mass values="${lens_mass}" />
+        <inertial>
+            <mass value="${lens_mass}" />
             <inertia ixx="1e-6" ixy="0" ixz="0" iyy="1e-6" iyz="0" izz="1e-6" />
-        </intertial>
+        </inertial>
         <visual>
             <origin xyz="${lens_h/2} 0 0" rpy="0 1.5707 0" />
             <geometry>
