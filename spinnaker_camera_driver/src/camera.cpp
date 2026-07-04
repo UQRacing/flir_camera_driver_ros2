@@ -505,8 +505,14 @@ void Camera::run()
           cv_.wait_for(lock, timeout);
         }
         if (!bufferQueue_.empty()) {
-          img = bufferQueue_.back();
-          bufferQueue_.pop_back();
+          // Consume oldest-first: the producer (processImage) push_back()es and
+          // drops the newest frame once the queue is full, so the consumer must
+          // pop_front() to keep true FIFO order. Using back()/pop_back() here
+          // made the queue a LIFO stack whose front entries were never consumed:
+          // after a single overflow the oldest frames stayed pinned forever, the
+          // usable depth collapsed to one, and droppedCount_ over-reported.
+          img = bufferQueue_.front();
+          bufferQueue_.pop_front();
         }
       }  // -------- end of locked section
       if (img && keepRunning_ && rclcpp::ok()) {
