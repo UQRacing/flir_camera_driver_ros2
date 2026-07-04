@@ -170,9 +170,6 @@ def launch_setup(context, *args, **kwargs):
                 'serial_number': [LaunchConfig('serial')],
             },
         ],
-        remappings=[
-            ('~/control', '/exposure_control/control'),
-        ],
     )
 
     return [node]
