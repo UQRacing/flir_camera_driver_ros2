@@ -49,7 +49,7 @@ example_parameters = {
         # 'binning_x': 1,
         # 'binning_y': 1,
         # 'connect_while_subscribed': True,
-        'frame_rate_continous': True,
+        'frame_rate_continuous': True,
         'frame_rate_auto': 'Off',
         'frame_rate': 20.0,
         'frame_rate_enable': True,
@@ -92,7 +92,7 @@ example_parameters = {
         'image_width': 2048,
         'image_height': 1536,
         'pixel_format': 'RGB8',  # 'BayerRG8, 'RGB8' or 'Mono8'
-        'frame_rate_continous': True,
+        'frame_rate_continuous': True,
         'frame_rate': 100.0,
         'trigger_mode': 'Off',
         'chunk_mode_active': True,
