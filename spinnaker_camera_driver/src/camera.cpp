@@ -752,14 +752,14 @@ bool Camera::start()
     if (parameterMap_.find(ptp_param) != parameterMap_.end()) {
       bool ptp_enabled = false;
       node_->get_parameter(ptp_param, ptp_enabled);
-      if (!ptp_enabled) {
-        node_->set_parameter(rclcpp::Parameter(ptp_param, true));
-        LOG_INFO("enabled IEEE1588 PTP via " << ptp_param);
-      }
-      if (!useSensorTimeStamp_) {
-        useSensorTimeStamp_ = true;
-        adjustTimeStamp_ = false;
-        LOG_INFO("using sensor timestamps for IEEE1588 sync");
+      if (ptp_enabled) {
+        if (!useSensorTimeStamp_) {
+          useSensorTimeStamp_ = true;
+          adjustTimeStamp_ = false;
+          LOG_INFO("using sensor timestamps for IEEE1588 sync");
+        }
+      } else {
+        LOG_INFO("IEEE1588 PTP disabled; using host-corrected timestamps if configured");
       }
     }
     if (!connectWhileSubscribed_) {

@@ -18,6 +18,7 @@
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument as LaunchArg
 from launch.actions import OpaqueFunction
+from launch.conditions import IfCondition
 from launch.substitutions import LaunchConfiguration as LaunchConfig
 from launch.substitutions import PathJoinSubstitution
 from launch_ros.actions import Node
@@ -27,22 +28,22 @@ example_parameters = {
     'blackfly_s': {
         'debug': False,
         'compute_brightness': False,
-        'adjust_timestamp': False,
-        'use_sensor_timestamp': True,
+        'adjust_timestamp': True,
+        'use_sensor_timestamp': False,
         'dump_node_map': False,
         # set parameters defined in blackfly_s.yaml
 	#This was set to continous on default
         #'gain_auto': 'Off',
         'pixel_format': 'BayerRG8',
 	#Set to continous on default
-        'exposure_auto': 'Off',
+        'exposure_auto': 'On',
         # to use a user set, do this:
         # 'user_set_selector': 'UserSet0',
         # 'user_set_load': 'Yes',
         # These are useful for GigE cameras
         # 'device_link_throughput_limit': 380000000,
         'gev_scps_packet_size': 9000,
-        'ptp_enable': True,
+        'ptp_enable': False,
         # ---- to reduce the sensor width and shift the crop
         'image_width': 1920,
         'image_height': 608,
@@ -70,8 +71,8 @@ example_parameters = {
     'blackfly': {
         'debug': False,
         'dump_node_map': False,
-        'adjust_timestamp': False,
-        'use_sensor_timestamp': True,
+        'adjust_timestamp': True,
+        'use_sensor_timestamp': False,
 	#This was continous default, same with exposure_auto
         'gain_auto': 'Off',
         'pixel_format': 'RGB',
@@ -81,7 +82,7 @@ example_parameters = {
         'frame_rate_enable': True,
         'buffer_queue_size': 10,
         'trigger_mode': 'Off',
-        'ptp_enable': True,
+        'ptp_enable': False,
         # 'stream_buffer_handling_mode': 'NewestFirst',
         # 'multicast_monitor_mode': False
     },
@@ -133,13 +134,13 @@ example_parameters = {
     'flir_ax5': {
         'debug': False,
         'compute_brightness': False,
-        'adjust_timestamp': False,
-        'use_sensor_timestamp': True,
+        'adjust_timestamp': True,
+        'use_sensor_timestamp': False,
         'dump_node_map': False,
         # --- Set parameters defined in flir_ax5.yaml
         'pixel_format': 'Mono8',
         'gev_scps_packet_size': 576,
-        'ptp_enable': True,
+        'ptp_enable': False,
         'image_width': 640,
         'image_height': 512,
         'offset_x': 0,
@@ -175,6 +176,8 @@ def launch_setup(context, *args, **kwargs):
             example_parameters[camera_type],
             {
                 'ffmpeg_image_transport.encoding': 'hevc_nvenc',
+                'camerainfo_url': 'file:///home/nvidia/ros2_ws/src/flir_camera_driver_ros2/calibration/2026.yaml',
+                'frame_id': [LaunchConfig('frame_id')],
                 'parameter_file': parameter_file,
                 'serial_number': [LaunchConfig('serial')],
             },
@@ -184,7 +187,21 @@ def launch_setup(context, *args, **kwargs):
         ],
     )
 
-    return [node]
+    compressed_node = Node(
+        package='image_transport',
+        executable='republish',
+        name=[LaunchConfig('camera_name'), '_compressed_republish'],
+        output='screen',
+        namespace=LaunchConfig('camera_name'),
+        arguments=['raw', 'compressed'],
+        remappings=[
+            ('in', 'image_raw'),
+            ('out', 'image_raw/compressed'),
+        ],
+        condition=IfCondition(LaunchConfig('publish_compressed')),
+    )
+
+    return [node, compressed_node]
 
 
 def generate_launch_description():
@@ -195,6 +212,11 @@ def generate_launch_description():
                 'camera_name',
                 default_value=['flir_camera'],
                 description='camera name (ros node name)',
+            ),
+            LaunchArg(
+                'frame_id',
+                default_value=[LaunchConfig('camera_name')],
+                description='frame id for published images',
             ),
             LaunchArg(
                 'camera_type',
@@ -210,6 +232,11 @@ def generate_launch_description():
                 'parameter_file',
                 default_value='',
                 description='path to ros parameter definition file (override camera type)',
+            ),
+            LaunchArg(
+                'publish_compressed',
+                default_value='true',
+                description='publish compressed image transport topic',
             ),
             OpaqueFunction(function=launch_setup),
         ]

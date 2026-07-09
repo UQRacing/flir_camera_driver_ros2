@@ -74,6 +74,22 @@ static std::string get_serial(Spinnaker::CameraPtr cam)
   return is_readable(psn) ? std::string(psn->GetValue()) : "";
 }
 
+static bool read_timestamp_tick_frequency(const GenApi::INodeMap & nodeMap, double * freq_out)
+{
+  const std::vector<std::string> candidates = {"GevTimestampTickFrequency", "TimestampTickFrequency"};
+  for (const auto & name : candidates) {
+    GenApi::CIntegerPtr ptrFreq = nodeMap.GetNode(name.c_str());
+    if (GenApi::IsAvailable(ptrFreq) && GenApi::IsReadable(ptrFreq)) {
+      const int64_t freq = ptrFreq->GetValue();
+      if (freq > 0) {
+        *freq_out = static_cast<double>(freq);
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
 static bool set_acquisition_mode_continuous(GenApi::INodeMap & nodeMap)
 {
   Spinnaker::GenApi::CEnumerationPtr ptrAcquisitionMode = nodeMap.GetNode("AcquisitionMode");
@@ -103,11 +119,43 @@ SpinnakerWrapperImpl::SpinnakerWrapperImpl()
   refreshCameraList();
 }
 
+void SpinnakerWrapperImpl::initTimestampTickFrequency()
+{
+  haveTimestampTickFrequency_ = false;
+  timestampTickFrequency_ = 1000000000.0;
+  if (!camera_) {
+    return;
+  }
+  try {
+    const auto & tlDeviceMap = camera_->GetTLDeviceNodeMap();
+    if (read_timestamp_tick_frequency(tlDeviceMap, &timestampTickFrequency_)) {
+      haveTimestampTickFrequency_ = true;
+      LOG_INFO("using TLDevice timestamp tick frequency: " << timestampTickFrequency_);
+      return;
+    }
+    GenApi::INodeMap & nodeMap = camera_->GetNodeMap();
+    if (read_timestamp_tick_frequency(nodeMap, &timestampTickFrequency_)) {
+      haveTimestampTickFrequency_ = true;
+      LOG_INFO("using device timestamp tick frequency: " << timestampTickFrequency_);
+      return;
+    }
+  } catch (const Spinnaker::Exception & e) {
+    LOG_WARN("failed to read timestamp tick frequency: " << e.what());
+  }
+  LOG_WARN("timestamp tick frequency unavailable; assuming nanosecond ticks");
+}
+
 void SpinnakerWrapperImpl::refreshCameraList()
 {
-  cameraList_ = system_->GetCameras();
-  for (size_t cam_idx = 0; cam_idx < cameraList_.GetSize(); cam_idx++) {
-    const auto cam = cameraList_[cam_idx];
+  try {
+    cameraList_ = system_->GetCameras();
+    for (size_t cam_idx = 0; cam_idx < cameraList_.GetSize(); cam_idx++) {
+      const auto cam = cameraList_[cam_idx];
+      (void)cam;
+    }
+  } catch (const Spinnaker::Exception & e) {
+    LOG_ERROR("Spinnaker exception while enumerating cameras: " << e.what());
+    cameraList_.Clear();
   }
 }
 
@@ -135,8 +183,12 @@ std::vector<std::string> SpinnakerWrapperImpl::getSerialNumbers() const
 {
   std::vector<std::string> sn;
   for (size_t cam_idx = 0; cam_idx < cameraList_.GetSize(); cam_idx++) {
-    const auto cam = cameraList_.GetByIndex(cam_idx);
-    sn.push_back(get_serial(cam));
+    try {
+      const auto cam = cameraList_.GetByIndex(cam_idx);
+      sn.push_back(get_serial(cam));
+    } catch (const Spinnaker::Exception & e) {
+      LOG_WARN("Spinnaker exception while reading camera serial: " << e.what());
+    }
   }
   return sn;
 }
@@ -337,6 +389,11 @@ void SpinnakerWrapperImpl::OnImageEvent(Spinnaker::ImagePtr imgPtr)
       expTime = chunk.GetExposureTime();
       gain = chunk.GetGain();
       stamp = chunk.GetTimestamp();
+      if (haveTimestampTickFrequency_) {
+        const long double ticks = static_cast<long double>(stamp);
+        const long double freq = static_cast<long double>(timestampTickFrequency_);
+        stamp = static_cast<int64_t>((ticks * 1.0e9L) / freq);
+      }
     } catch (const Spinnaker::Exception & e) {
       // Without chunk data enabled there is no way to get e.g. the time stamps. Bad!
       // Spinnaker: Image does not contain chunk data. [-1001]
@@ -406,6 +463,7 @@ bool SpinnakerWrapperImpl::initCamera(const std::string & serialNumber)
                 "Initialized camera [serial: %s] from: [%s]", serialNumber.c_str(),
                 interfaceDisplayName.c_str());
               camera_ = ptrCam;
+              initTimestampTickFrequency();
               return (true);
             } catch (Spinnaker::Exception & e) {
               // error while open the cameras in this interface

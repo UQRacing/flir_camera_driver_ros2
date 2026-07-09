@@ -69,8 +69,9 @@ private:
   void setPixelFormat(const std::string & pixFmt);
   bool setInINodeMap(double f, const std::string & field, double * fret);
   void monitorStatus();
+  void initTimestampTickFrequency();
 
-  rclcpp::Logger get_logger() { return rclcpp::get_logger("Spinnaker Wrapper"); }
+  rclcpp::Logger get_logger() const { return rclcpp::get_logger("Spinnaker Wrapper"); }
 
   // ----- variables --
   Spinnaker::SystemPtr system_;
@@ -85,6 +86,8 @@ private:
   int brightnessSkipPixels_{32};
   pixel_format::PixelFormat pixelFormat_{pixel_format::INVALID};
   Spinnaker::GenApi::CFloatPtr exposureTimeNode_;
+  double timestampTickFrequency_{1000000000.0};
+  bool haveTimestampTickFrequency_{false};
   bool keepRunning_{true};
   std::shared_ptr<std::thread> thread_;
   std::mutex mutex_;
