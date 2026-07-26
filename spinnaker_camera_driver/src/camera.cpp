@@ -621,7 +621,8 @@ void Camera::doPublish(const ImageConstPtr & im)
         t = rclcpp::Time(im->time_);
       }
     } else {
-      t = adjustTimeStamp_ ? getAdjustedTimeStamp(im->time_, im->imageTime_) : rclcpp::Time(im->time_);
+      t = adjustTimeStamp_ ? getAdjustedTimeStamp(im->time_, im->imageTime_)
+                           : rclcpp::Time(im->time_);
     }
   }
   imageMsg_.header.stamp = t;
@@ -724,14 +725,14 @@ bool Camera::start()
     for (int retry = 1; retry < 6; retry++) {
       if (wrapper_->initCamera(serial_, interfaceId_)) {
         LOG_INFO(
-          "found camera with serial number: " << serial_ << " on pinned interface: " <<
-            interfaceId_);
+          "found camera with serial number: " << serial_
+                                              << " on pinned interface: " << interfaceId_);
         initializedCamera = true;
         break;
       }
       LOG_WARN(
-        "no camera found with serial: " << serial_ << " on pinned interface: " <<
-          interfaceId_ << " on try # " << retry);
+        "no camera found with serial: " << serial_ << " on pinned interface: " << interfaceId_
+                                        << " on try # " << retry);
       std::this_thread::sleep_for(chrono::seconds(1));
     }
   } else {
@@ -757,8 +758,9 @@ bool Camera::start()
   }
   if (!initializedCamera) {
     LOG_ERROR(
-      "giving up, camera " << serial_ << " not found" <<
-        (interfaceId_.empty() ? "!" : " on pinned interface: " + interfaceId_));
+      "giving up, camera " << serial_ << " not found"
+                           << (interfaceId_.empty() ? "!"
+                                                    : " on pinned interface: " + interfaceId_));
     return (false);
   }
 

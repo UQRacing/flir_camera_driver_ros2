@@ -32,10 +32,10 @@ example_parameters = {
         'use_sensor_timestamp': False,
         'dump_node_map': False,
         # set parameters defined in blackfly_s.yaml
-	#This was set to continous on default
-        #'gain_auto': 'Off',
+        # This was continuous by default.
+        # 'gain_auto': 'Off',
         'pixel_format': 'BayerRG8',
-	#Set to continous on default
+        # Set to continuous by default.
         'exposure_auto': 'On',
         # to use a user set, do this:
         # 'user_set_selector': 'UserSet0',
@@ -73,7 +73,7 @@ example_parameters = {
         'dump_node_map': False,
         'adjust_timestamp': True,
         'use_sensor_timestamp': False,
-	#This was continous default, same with exposure_auto
+        # This and exposure_auto were continuous by default.
         'gain_auto': 'Off',
         'pixel_format': 'RGB',
         'exposure_auto': 'Off',
@@ -176,7 +176,10 @@ def launch_setup(context, *args, **kwargs):
             example_parameters[camera_type],
             {
                 'ffmpeg_image_transport.encoding': 'hevc_nvenc',
-                'camerainfo_url': 'file:///home/nvidia/ros2_ws/src/flir_camera_driver_ros2/calibration/2026.yaml',
+                'camerainfo_url': (
+                    'file:///home/nvidia/ros2_ws/src/flir_camera_driver_ros2/'
+                    'calibration/2026.yaml'
+                ),
                 'frame_id': [LaunchConfig('frame_id')],
                 'parameter_file': parameter_file,
                 'serial_number': [LaunchConfig('serial')],

@@ -76,7 +76,8 @@ static std::string get_serial(Spinnaker::CameraPtr cam)
 
 static bool read_timestamp_tick_frequency(const GenApi::INodeMap & nodeMap, double * freq_out)
 {
-  const std::vector<std::string> candidates = {"GevTimestampTickFrequency", "TimestampTickFrequency"};
+  const std::vector<std::string> candidates = {
+    "GevTimestampTickFrequency", "TimestampTickFrequency"};
   for (const auto & name : candidates) {
     GenApi::CIntegerPtr ptrFreq = nodeMap.GetNode(name.c_str());
     if (GenApi::IsAvailable(ptrFreq) && GenApi::IsReadable(ptrFreq)) {
@@ -449,9 +450,9 @@ bool SpinnakerWrapperImpl::initCamera(
       if (!interfaceId.empty()) {
         const Spinnaker::GenApi::CStringPtr ptrInterfaceId =
           nodeMapInterface.GetNode("InterfaceID");
-        if (!IsAvailable(ptrInterfaceId) || !IsReadable(ptrInterfaceId) ||
-          ptrInterfaceId->GetValue() != interfaceId.c_str())
-        {
+        if (
+          !IsAvailable(ptrInterfaceId) || !IsReadable(ptrInterfaceId) ||
+          ptrInterfaceId->GetValue() != interfaceId.c_str()) {
           continue;
         }
       }
