@@ -205,8 +205,12 @@ void Camera::readParameters()
 {
   quiet_ = safe_declare<bool>(prefix_ + "quiet", false);
   serial_ = safe_declare<std::string>(prefix_ + "serial_number", "missing_serial_number");
+  interfaceId_ = safe_declare<std::string>(prefix_ + "interface_id", "");
   if (!quiet_) {
     LOG_INFO("reading ros parameters for camera with serial: " << serial_);
+    if (!interfaceId_.empty()) {
+      LOG_INFO("pinning camera discovery to interface: " << interfaceId_);
+    }
   }
   debug_ = safe_declare<bool>(prefix_ + "debug", false);
   adjustTimeStamp_ = safe_declare<bool>(prefix_ + "adjust_timestamp", false);
@@ -715,62 +719,81 @@ bool Camera::start()
   wrapper_->setAcquisitionTimeout(acquisitionTimeout_);
 
   LOG_INFO("using spinnaker lib version: " + wrapper_->getLibraryVersion());
-  bool foundCamera = false;
-  for (int retry = 1; retry < 6; retry++) {
-    wrapper_->refreshCameraList();
-    const auto camList = wrapper_->getSerialNumbers();
-    if (std::find(camList.begin(), camList.end(), serial_) == camList.end()) {
-      LOG_WARN("no camera found with serial: " << serial_ << " on try # " << retry);
-      for (const auto & cam : camList) {
-        LOG_WARN(" found cameras: " << cam);
+  bool initializedCamera = false;
+  if (!interfaceId_.empty()) {
+    for (int retry = 1; retry < 6; retry++) {
+      if (wrapper_->initCamera(serial_, interfaceId_)) {
+        LOG_INFO(
+          "found camera with serial number: " << serial_ << " on pinned interface: " <<
+            interfaceId_);
+        initializedCamera = true;
+        break;
       }
+      LOG_WARN(
+        "no camera found with serial: " << serial_ << " on pinned interface: " <<
+          interfaceId_ << " on try # " << retry);
       std::this_thread::sleep_for(chrono::seconds(1));
-    } else {
-      LOG_INFO("found camera with serial number: " << serial_);
-      foundCamera = true;
-      break;
+    }
+  } else {
+    bool foundCamera = false;
+    for (int retry = 1; retry < 6; retry++) {
+      wrapper_->refreshCameraList();
+      const auto camList = wrapper_->getSerialNumbers();
+      if (std::find(camList.begin(), camList.end(), serial_) == camList.end()) {
+        LOG_WARN("no camera found with serial: " << serial_ << " on try # " << retry);
+        for (const auto & cam : camList) {
+          LOG_WARN(" found cameras: " << cam);
+        }
+        std::this_thread::sleep_for(chrono::seconds(1));
+      } else {
+        LOG_INFO("found camera with serial number: " << serial_);
+        foundCamera = true;
+        break;
+      }
+    }
+    if (foundCamera) {
+      initializedCamera = wrapper_->initCamera(serial_);
     }
   }
-  if (!foundCamera) {
-    LOG_ERROR("giving up, camera " << serial_ << " not found!");
+  if (!initializedCamera) {
+    LOG_ERROR(
+      "giving up, camera " << serial_ << " not found" <<
+        (interfaceId_.empty() ? "!" : " on pinned interface: " + interfaceId_));
     return (false);
   }
+
   keepRunning_ = true;
   thread_ = std::make_shared<std::thread>(&Camera::run, this);
 
-  if (wrapper_->initCamera(serial_)) {
-    if (dumpNodeMap_) {
-      LOG_INFO("dumping node map!");
-      std::string nm = wrapper_->getNodeMapAsString();
-      std::cout << nm;
-    }
-    // Must first create the camera parameters before acquisition is started.
-    // Some parameters (like blackfly s chunk control) cannot be set once
-    // the camera is running.
-    createCameraParameters();
-    const std::string ptp_param = prefix_ + "ptp_enable";
-    if (parameterMap_.find(ptp_param) != parameterMap_.end()) {
-      bool ptp_enabled = false;
-      node_->get_parameter(ptp_param, ptp_enabled);
-      if (ptp_enabled) {
-        if (!useSensorTimeStamp_) {
-          useSensorTimeStamp_ = true;
-          adjustTimeStamp_ = false;
-          LOG_INFO("using sensor timestamps for IEEE1588 sync");
-        }
-      } else {
-        LOG_INFO("IEEE1588 PTP disabled; using host-corrected timestamps if configured");
+  if (dumpNodeMap_) {
+    LOG_INFO("dumping node map!");
+    std::string nm = wrapper_->getNodeMapAsString();
+    std::cout << nm;
+  }
+  // Must first create the camera parameters before acquisition is started.
+  // Some parameters (like blackfly s chunk control) cannot be set once
+  // the camera is running.
+  createCameraParameters();
+  const std::string ptp_param = prefix_ + "ptp_enable";
+  if (parameterMap_.find(ptp_param) != parameterMap_.end()) {
+    bool ptp_enabled = false;
+    node_->get_parameter(ptp_param, ptp_enabled);
+    if (ptp_enabled) {
+      if (!useSensorTimeStamp_) {
+        useSensorTimeStamp_ = true;
+        adjustTimeStamp_ = false;
+        LOG_INFO("using sensor timestamps for IEEE1588 sync");
       }
-    }
-    if (!connectWhileSubscribed_) {
-      startCamera();
     } else {
-      checkSubscriptionsTimer_ = rclcpp::create_timer(
-        node_, node_->get_clock(), rclcpp::Duration(1, 0),
-        std::bind(&Camera::checkSubscriptions, this));
+      LOG_INFO("IEEE1588 PTP disabled; using host-corrected timestamps if configured");
     }
+  }
+  if (!connectWhileSubscribed_) {
+    startCamera();
   } else {
-    LOG_ERROR("init camera failed for cam: " << serial_);
+    checkSubscriptionsTimer_ = rclcpp::create_timer(
+      node_, node_->get_clock(), rclcpp::Duration(1, 0),
+      std::bind(&Camera::checkSubscriptions, this));
   }
   return (true);
 }

@@ -45,7 +45,7 @@ public:
   std::vector<std::string> getSerialNumbers() const;
   std::string getPixelFormat() const;
 
-  bool initCamera(const std::string & serialNumber);
+  bool initCamera(const std::string & serialNumber, const std::string & interfaceId);
   bool deInitCamera();
 
   bool startCamera(const SpinnakerWrapper::Callback & cb);

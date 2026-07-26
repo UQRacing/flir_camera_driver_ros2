@@ -116,7 +116,6 @@ SpinnakerWrapperImpl::SpinnakerWrapperImpl()
     std::cerr << "cannot instantiate spinnaker driver!" << std::endl;
     throw std::runtime_error("failed to get spinnaker driver!");
   }
-  refreshCameraList();
 }
 
 void SpinnakerWrapperImpl::initTimestampTickFrequency()
@@ -433,7 +432,8 @@ void SpinnakerWrapperImpl::OnImageEvent(Spinnaker::ImagePtr imgPtr)
   }
 }
 
-bool SpinnakerWrapperImpl::initCamera(const std::string & serialNumber)
+bool SpinnakerWrapperImpl::initCamera(
+  const std::string & serialNumber, const std::string & interfaceId)
 {
   if (camera_) {
     return false;
@@ -446,6 +446,16 @@ bool SpinnakerWrapperImpl::initCamera(const std::string & serialNumber)
     const auto ptrInterfaceType = nodeMapInterface.GetNode("InterfaceType");
 
     if (IsAvailable(ptrInterfaceType) && IsReadable(ptrInterfaceType)) {
+      if (!interfaceId.empty()) {
+        const Spinnaker::GenApi::CStringPtr ptrInterfaceId =
+          nodeMapInterface.GetNode("InterfaceID");
+        if (!IsAvailable(ptrInterfaceId) || !IsReadable(ptrInterfaceId) ||
+          ptrInterfaceId->GetValue() != interfaceId.c_str())
+        {
+          continue;
+        }
+      }
+
       const Spinnaker::GenApi::CStringPtr ptrInterfaceDisplayName =
         nodeMapInterface.GetNode("InterfaceDisplayName");
 

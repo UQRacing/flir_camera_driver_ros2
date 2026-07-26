@@ -36,9 +36,10 @@ std::vector<std::string> SpinnakerWrapper::getSerialNumbers() const
   return wrapperImpl_->getSerialNumbers();
 }
 
-bool SpinnakerWrapper::initCamera(const std::string & serialNumber)
+bool SpinnakerWrapper::initCamera(
+  const std::string & serialNumber, const std::string & interfaceId)
 {
-  return wrapperImpl_->initCamera(serialNumber);
+  return wrapperImpl_->initCamera(serialNumber, interfaceId);
 }
 
 bool SpinnakerWrapper::deInitCamera() { return wrapperImpl_->deInitCamera(); }

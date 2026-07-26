@@ -129,6 +129,7 @@ private:
   image_transport::CameraPublisher pub_;
   rclcpp::Publisher<flir_camera_msgs::msg::ImageMetaData>::SharedPtr metaPub_;
   std::string serial_;
+  std::string interfaceId_;
   std::string name_;
   std::string cameraInfoURL_;
   std::string frameId_;

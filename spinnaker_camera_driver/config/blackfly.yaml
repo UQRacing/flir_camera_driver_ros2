@@ -72,6 +72,21 @@ parameters:
   - name: balance_ratio_selector
     type: enum # valid values: Red, Blue
     node: AnalogControl/BalanceRatioSelector
+  # Ordered aliases allow launch files to set both manual white-balance
+  # channels deterministically. GenICam exposes one BalanceRatio value behind
+  # a Red/Blue selector, so each selector must immediately precede its value.
+  - name: balance_ratio_red_selector
+    type: enum
+    node: AnalogControl/BalanceRatioSelector
+  - name: balance_ratio_red
+    type: float
+    node: AnalogControl/BalanceRatio
+  - name: balance_ratio_blue_selector
+    type: enum
+    node: AnalogControl/BalanceRatioSelector
+  - name: balance_ratio_blue
+    type: float
+    node: AnalogControl/BalanceRatio
 
   #
   # -------- device link throughput limiting
@@ -135,9 +150,12 @@ parameters:
     type: enum
     # valid values: "LevelLow", "LevelHigh", "FallingEdge", "RisingEdge", "AnyEdge",
     node: AcquisitionControl/TriggerActivation
-  - name: frame_rate_enable # must come after trigger_mode
+  - name: frame_rate_auto
+    type: enum
+    node: AcquisitionControl/AcquisitionFrameRateAuto
+  - name: frame_rate_enable # must come after trigger_mode and frame_rate_auto
     type: bool
-    node: AcquisitionControl/AcquisitionFrameRateEnable
+    node: AcquisitionControl/AcquisitionFrameRateEnabled
   - name: frame_rate
     type: float
     node: AcquisitionControl/AcquisitionFrameRate
