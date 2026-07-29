@@ -32,6 +32,7 @@
 namespace spinnaker_camera_driver
 {
 namespace chrono = std::chrono;
+static constexpr int kCameraDiscoveryAttempts = 20;
 //
 // this complicated code is to detect an interface change
 // between foxy and galactic
@@ -722,7 +723,7 @@ bool Camera::start()
   LOG_INFO("using spinnaker lib version: " + wrapper_->getLibraryVersion());
   bool initializedCamera = false;
   if (!interfaceId_.empty()) {
-    for (int retry = 1; retry < 6; retry++) {
+    for (int retry = 1; retry <= kCameraDiscoveryAttempts; retry++) {
       if (wrapper_->initCamera(serial_, interfaceId_)) {
         LOG_INFO(
           "found camera with serial number: " << serial_
@@ -737,7 +738,7 @@ bool Camera::start()
     }
   } else {
     bool foundCamera = false;
-    for (int retry = 1; retry < 6; retry++) {
+    for (int retry = 1; retry <= kCameraDiscoveryAttempts; retry++) {
       wrapper_->refreshCameraList();
       const auto camList = wrapper_->getSerialNumbers();
       if (std::find(camList.begin(), camList.end(), serial_) == camList.end()) {
